@@ -1,0 +1,38 @@
+name: Scheduled Container Run
+
+on:
+  schedule:
+    # Run at minute 1 of every hour
+    - cron: '1 * * * *'
+  workflow_dispatch:
+
+# OIDCのための権限設定
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  run-container:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/github-actions-nicole-role
+          aws-region: ap-northeast-1
+      
+      - name: Run Docker container
+        run: docker run -v ${{ github.workspace }}/dist:/app/dist ghcr.io/${{ github.repository }}:latest
+      
+      - name: Compress and Upload to S3
+        run: |
+          # Compress the JSON file
+          gzip -c ${{ github.workspace }}/dist/ranking.json > ranking.json.gz
+          
+          # Upload to S3 with specific content encoding and type
+          aws s3 cp ranking.json.gz s3://shibu1x-public/test.json \
+            --content-encoding gzip \
+            --content-type "application/json"
