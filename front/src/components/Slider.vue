@@ -20,58 +20,57 @@ const change = (value?: String): void => {
 </template>
 
 <style lang="scss" scoped>
-/* The switch - the box around the slider */
-$switch_width: 60px;
-$slider_width: 26px;
+$switch_width: 40px;
+$switch_height: 20px;
+$slider_size: 16px;
 
 label.switch {
     position: relative;
     display: inline-block;
     width: $switch_width;
-    height: $switch_width - $slider_width;
+    height: $switch_height;
+    margin: 4px;
 
-    /* Hide default HTML checkbox */
     input {
         opacity: 0;
         width: 0;
         height: 0;
 
-        &:checked+.slider {
-            background-color: #2196F3;
+        &:checked + .slider {
+            background-color: #4CAF50;
 
             &:before {
-                transform: translateX($slider_width);
+                transform: translateX($switch_width - $slider_size - 4px);
             }
         }
 
-        &:focus+.slider {
-            box-shadow: 0 0 1px #2196F3;
+        &:focus + .slider {
+            box-shadow: 0 0 1px #4CAF50;
         }
     }
 }
 
-/* The slider */
-span.slider {
+.slider {
     position: absolute;
     cursor: pointer;
     inset: 0;
     background-color: #ccc;
-    transition: .4s;
+    transition: .3s ease-in-out;
 
     &:before {
         position: absolute;
         content: "";
-        height: $slider_width;
-        width: $slider_width;
-        left: 4px;
-        bottom: 4px;
+        height: $slider_size;
+        width: $slider_size;
+        left: 2px;
+        bottom: 2px;
         background-color: white;
-        transition: .4s;
+        transition: .3s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    /* Rounded sliders */
     &.round {
-        border-radius: $switch_width - $slider_width;
+        border-radius: $switch_height;
 
         &:before {
             border-radius: 50%;

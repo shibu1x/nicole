@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useTitle } from '@vueuse/core'
 import axios from 'axios'
 import type { Rankings } from '@/types'
 import VideoList from '@/components/VideoList.vue'
@@ -7,6 +8,7 @@ import VideoList from '@/components/VideoList.vue'
 const rankings = ref<Rankings>([])
 const isLoaded = ref(false)
 const blockedOwnerIds = ref<Set<string>>(new Set())
+useTitle('ニコニコ動画ランキング')
 
 const filteredRankings = computed(() => {
   if (!isLoaded.value) return []
@@ -51,11 +53,6 @@ onMounted(async () => {
 
 <template>
   <div class="container">
-    <ul class="rank">
-      <li v-for="rank in filteredRankings[0]?.length" :key="rank">
-        {{ rank }}
-      </li>
-    </ul>
     <VideoList
       v-for="(ranking, index) in filteredRankings"
       :key="index"
@@ -67,23 +64,33 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .container {
-  $rank-width: 50px;
   display: flex;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
 
-  .rank {
-    width: $rank-width;
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+.title-container {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 16px;
+}
 
-    li {
-      height: 270px;
-      padding: 3px;
-      margin: 1px 0;
-      border-bottom: 1px solid;
-      font-size: 1.5rem;
-      text-align: right;
-    }
+.title-input {
+  font-size: 1.5rem;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-background-soft);
+  color: var(--color-text);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-border-hover);
   }
 }
 </style>
