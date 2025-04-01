@@ -8,7 +8,7 @@ import VideoList from '@/components/VideoList.vue'
 const rankings = ref<Rankings>([])
 const isLoaded = ref(false)
 const blockedOwnerIds = ref<Set<string>>(new Set())
-useTitle('ニコニコ動画ランキング')
+useTitle('NicoRanking')
 
 const filteredRankings = computed(() => {
   if (!isLoaded.value) return []
