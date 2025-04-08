@@ -102,7 +102,7 @@ func fetchVideoLists() ([][]Video, error) {
 
 	// Parse Lanes
 	rankingData.ForEach(func(_, value gjson.Result) bool {
-		if value.Get("data.title").String() == "Other" {
+		if value.Get("data.title").String() == "その他" {
 			return true
 		}
 
