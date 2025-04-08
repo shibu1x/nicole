@@ -36,7 +36,7 @@ const emit = defineEmits<{
 
 <style lang="scss" scoped>
 .main {
-  width: calc((98vw - 50px) / 5);
+  width: calc((98vw - 50px) / 4);
   list-style-type: none;
   margin: 0;
   padding: 0;
