@@ -1,12 +1,14 @@
 package main
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
+	"path/filepath"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/tidwall/gjson"
@@ -23,53 +25,91 @@ type Video struct {
 }
 
 func main() {
-	log.Printf("Starting CLI job at %s", time.Now().Format(time.RFC3339))
-
-	if err := runPeriodicTask(); err != nil {
-		log.Fatal(err)
+	videoLists, err := fetchVideoLists()
+	if err != nil {
+		log.Fatalf("Failed to retrieve video list: %v", err)
 	}
 
-	log.Println("Job completed successfully")
+	// Save to JSON file
+	if err := saveVideoListsToJSON(videoLists, "dist/ranking.json"); err != nil {
+		log.Fatalf("Failed to save JSON file: %v", err)
+	} else {
+		log.Println("Successfully saved JSON file: dist/ranking.json")
+	}
 }
 
-func scrapeNicovideoRanking() ([][]Video, error) {
-	resp, err := http.Get("https://www.nicovideo.jp/ranking")
+// FetchVideoLists is a function that retrieves video lists from Niconico video rankings
+func fetchVideoLists() ([][]Video, error) {
+	// Niconico video ranking page URL
+	url := "https://www.nicovideo.jp/ranking/custom"
+
+	// Create HTTP request
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch ranking page: %w", err)
+		return nil, fmt.Errorf("failed to create HTTP request: %v", err)
+	}
+
+	// Set User-Agent header (as needed)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+
+	// Create HTTP client and execute request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute HTTP request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %w", err)
+	// Check status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid HTTP status code: %d", resp.StatusCode)
 	}
 
-	var rawData string
-	doc.Find("#MatrixRanking-app").Each(func(i int, s *goquery.Selection) {
-		if appData, exists := s.Attr("data-app"); exists {
-			rawData = appData
+	// Parse HTML document
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HTML: %v", err)
+	}
+
+	// Search for <meta name="server-response" content="..."> element
+	var jsonContent string
+	doc.Find("meta[name='server-response']").Each(func(i int, s *goquery.Selection) {
+		// Get content attribute value
+		content, exists := s.Attr("content")
+		if exists {
+			jsonContent = content
 		}
 	})
 
-	if rawData == "" {
-		return nil, fmt.Errorf("ranking data not found")
+	if jsonContent == "" {
+		return nil, fmt.Errorf("server-response meta tag not found")
 	}
 
-	// gjson を使用してJSONをパース
-	result := gjson.Parse(rawData)
+	// Decode HTML entities (if needed)
+	jsonContent = strings.ReplaceAll(jsonContent, "&quot;", "\"")
+
+	// Parse JSON data
+	result := gjson.Parse(jsonContent)
+
+	// Extract $getCustomRankingRanking
+	rankingData := result.Get("data.response.$getCustomRankingRanking")
+
+	if !rankingData.Exists() {
+		return nil, fmt.Errorf("$getCustomRankingRanking data not found")
+	}
 
 	videoLists := make([][]Video, 0)
 
-	// Lanes の解析
-	result.Get("lanes").ForEach(func(_, value gjson.Result) bool {
-		if value.Get("title").String() == "その他" {
+	// Parse Lanes
+	rankingData.ForEach(func(_, value gjson.Result) bool {
+		if value.Get("data.title").String() == "Other" {
 			return true
 		}
 
 		videoList := make([]Video, 0)
 
-		// videoList の解析
-		value.Get("videoList").ForEach(func(_, videoValue gjson.Result) bool {
+		// Parse videoList
+		value.Get("data.videoList").ForEach(func(_, videoValue gjson.Result) bool {
 			video := Video{
 				Id:                videoValue.Get("id").String(),
 				Title:             videoValue.Get("title").String(),
@@ -89,28 +129,42 @@ func scrapeNicovideoRanking() ([][]Video, error) {
 	return videoLists, nil
 }
 
-func runPeriodicTask() error {
-	videoList, err := scrapeNicovideoRanking()
+// SaveVideoListsToJSON is a function that saves video lists to a JSON file
+func saveVideoListsToJSON(videoLists [][]Video, filePath string) error {
+	// Encode to JSON
+	jsonData, err := json.MarshalIndent(videoLists, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to scrape ranking: %w", err)
+		return fmt.Errorf("failed to encode JSON: %v", err)
 	}
 
-	// Convert to JSON
-	jsonData, err := json.MarshalIndent(videoList, "", "  ")
+	// Ensure directory exists
+	dir := filepath.Dir(filePath)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory: %v", err)
+		}
+	}
+
+	// Create file for writing with gzip compression
+	file, err := os.Create(filePath + ".gz")
 	if err != nil {
-		return fmt.Errorf("failed to marshal JSON: %w", err)
+		return fmt.Errorf("failed to create gzip file: %v", err)
+	}
+	defer file.Close()
+
+	// Create gzip writer
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
+
+	// Write JSON data to gzip writer
+	if _, err := gzipWriter.Write(jsonData); err != nil {
+		return fmt.Errorf("failed to write gzipped data: %v", err)
 	}
 
-	// Create dist directory if it doesn't exist
-	if err := os.MkdirAll("dist", 0755); err != nil {
-		return fmt.Errorf("failed to create dist directory: %w", err)
+	// Also save the uncompressed version for backward compatibility
+	if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+		return fmt.Errorf("failed to write uncompressed file: %v", err)
 	}
-
-	// Save locally
-	if err := os.WriteFile("dist/ranking.json", jsonData, 0644); err != nil {
-		return fmt.Errorf("failed to write JSON file: %w", err)
-	}
-	log.Println("Ranking data saved to dist/ranking.json")
 
 	return nil
 }

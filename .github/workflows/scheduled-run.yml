@@ -1,9 +1,9 @@
 name: Scheduled Container Run
 
 on:
-  # schedule:
-  #   # Run at minute 1 of every hour
-  #   - cron: '1 * * * *'
+  schedule:
+    # Run at minute 1 of every hour
+    - cron: '1 * * * *'
   workflow_dispatch:
 
 # OIDCのための権限設定
@@ -28,11 +28,8 @@ jobs:
         run: docker run -v ${{ github.workspace }}/dist:/app/dist ghcr.io/${{ github.repository }}:latest
       
       - name: Compress and Upload to S3
-        run: |
-          # Compress the JSON file
-          gzip -c ${{ github.workspace }}/dist/ranking.json > ranking.json.gz
-          
+        run: |          
           # Upload to S3 with specific content encoding and type
-          aws s3 cp ranking.json.gz s3://shibu1x-public/test.json \
+          aws s3 cp ${{ github.workspace }}/dist/ranking.json.gz s3://shibu1x-public/test.json \
             --content-encoding gzip \
             --content-type "application/json"
