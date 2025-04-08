@@ -1,9 +1,9 @@
 name: Scheduled Container Run
 
 on:
-  schedule:
-    # Run at minute 1 of every hour
-    - cron: '1 * * * *'
+  # schedule:
+  #   # Run at minute 1 of every hour
+  #   - cron: '1 * * * *'
   workflow_dispatch:
 
 # OIDCのための権限設定
