@@ -8,12 +8,14 @@ import VideoList from '@/components/VideoList.vue'
 const rankings = ref<Rankings>([])
 const isLoaded = ref(false)
 const blockedOwnerIds = ref<Set<string>>(new Set())
+const blockedOwnerIdsText = ref('')
+const showBlockedControl = ref(false)
 useTitle('NicoRanking')
 
 const filteredRankings = computed(() => {
   if (!isLoaded.value) return []
 
-  return rankings.value.map(ranking => 
+  return rankings.value.map(ranking =>
     ranking.map(video => ({
       ...video,
       IsMuted: blockedOwnerIds.value.has(video.OwnerId)
@@ -24,6 +26,7 @@ const filteredRankings = computed(() => {
 const loadBlockedOwnerIds = () => {
   const saved = localStorage.getItem('block_owner_ids')
   blockedOwnerIds.value = new Set(saved ? JSON.parse(saved) : [])
+  blockedOwnerIdsText.value = Array.from(blockedOwnerIds.value).join('\n')
 }
 
 const saveBlockedOwnerIds = () => {
@@ -36,6 +39,16 @@ const saveBlockedOwnerIds = () => {
 const toggleBlockOwner = (ownerId: string) => {
   const ids = blockedOwnerIds.value
   ids.has(ownerId) ? ids.delete(ownerId) : ids.add(ownerId)
+  saveBlockedOwnerIds()
+  blockedOwnerIdsText.value = Array.from(blockedOwnerIds.value).join('\n')
+}
+
+const saveFromTextarea = () => {
+  const ids = blockedOwnerIdsText.value
+    .split('\n')
+    .map(id => id.trim())
+    .filter(id => id !== '')
+  blockedOwnerIds.value = new Set(ids)
   saveBlockedOwnerIds()
 }
 
@@ -53,44 +66,64 @@ onMounted(async () => {
 
 <template>
   <div class="container">
-    <VideoList
-      v-for="(ranking, index) in filteredRankings"
-      :key="index"
-      :ranking="ranking"
-      @toggle-block="toggleBlockOwner"
-    />
+    <header>
+      <button @click="showBlockedControl = !showBlockedControl">
+        {{ showBlockedControl ? 'Hide' : 'Edit BlockList' }}
+      </button>
+      <div v-show="showBlockedControl" class="blocklist-editor">
+        <textarea
+          v-model="blockedOwnerIdsText"
+          placeholder="Enter one Owner ID per line to block"
+          rows="10"
+        />
+        <button @click="saveFromTextarea">Save</button>
+      </div>
+    </header>
+    <main>
+      <VideoList
+        v-for="(ranking, index) in filteredRankings"
+        :key="index"
+        :ranking="ranking"
+        @toggle-block="toggleBlockOwner"
+      />
+    </main>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .container {
   display: flex;
-  gap: 16px;
-  padding: 16px;
-  max-width: 1440px;
-  margin: 0 auto;
+  flex-direction: column;
 }
 
-.title-container {
-  width: 100%;
-  text-align: center;
-  margin-bottom: 16px;
-}
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin: 0 2vw;
 
-.title-input {
-  font-size: 1.5rem;
-  padding: 8px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-background-soft);
-  color: var(--color-text);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-  
-  &:focus {
-    outline: none;
-    border-color: var(--color-border-hover);
+  button {
+    margin-left: auto;
   }
+
+  .blocklist-editor {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-top: 0.56vw;
+
+    textarea {
+      width: 20vw;
+      margin-bottom: 0.56vw;
+    }
+  }
+}
+
+main {
+  display: flex;
+  gap: 1.1vw;
+  padding: 1.1vw;
+  max-width: 100vw;
+  margin: 0 auto;
 }
 </style>
