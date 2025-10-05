@@ -1,80 +1,75 @@
 <script setup lang="ts">
-
-const props = defineProps<{
+defineProps<{
   is_checked: boolean
 }>()
 
-const emits = defineEmits(['change'])
-
-const change = (value?: String): void => {
-    emits('change', value)
-}
-
+const emit = defineEmits(['change'])
 </script>
 
 <template>
-    <label class="switch">
-        <input type="checkbox" :checked="is_checked" @change="change()">
-        <span class="slider round"></span>
-    </label>
+  <label class="switch">
+    <input type="checkbox" :checked="is_checked" @change="emit('change')">
+    <span class="slider round" />
+  </label>
 </template>
 
 <style lang="scss" scoped>
-$switch_width: 40px;
-$switch_height: 20px;
-$slider_size: 16px;
+$switch-width: 2.78vw;
+$switch-height: 1.39vw;
+$slider-size: 1.11vw;
+$slider-offset: 0.14vw;
 
-label.switch {
-    position: relative;
-    display: inline-block;
-    width: $switch_width;
-    height: $switch_height;
-    margin: 4px;
+.switch {
+  position: relative;
+  display: inline-block;
+  width: $switch-width;
+  height: $switch-height;
+  margin: 0.28vw;
 
-    input {
-        opacity: 0;
-        width: 0;
-        height: 0;
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
 
-        &:checked + .slider {
-            background-color: #4CAF50;
+    &:checked + .slider {
+      background-color: #4caf50;
 
-            &:before {
-                transform: translateX($switch_width - $slider_size - 4px);
-            }
-        }
-
-        &:focus + .slider {
-            box-shadow: 0 0 1px #4CAF50;
-        }
+      &::before {
+        transform: translateX($switch-width - $slider-size - 0.28vw);
+      }
     }
+
+    &:focus + .slider {
+      box-shadow: 0 0 0.07vw #4caf50;
+    }
+  }
 }
 
 .slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #ccc;
+  transition: 0.3s ease-in-out;
+
+  &::before {
     position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background-color: #ccc;
-    transition: .3s ease-in-out;
+    content: '';
+    height: $slider-size;
+    width: $slider-size;
+    left: $slider-offset;
+    bottom: $slider-offset;
+    background-color: white;
+    transition: 0.3s ease-in-out;
+    box-shadow: 0 0.14vw 0.28vw rgba(0, 0, 0, 0.2);
+  }
 
-    &:before {
-        position: absolute;
-        content: "";
-        height: $slider_size;
-        width: $slider_size;
-        left: 2px;
-        bottom: 2px;
-        background-color: white;
-        transition: .3s ease-in-out;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  &.round {
+    border-radius: $switch-height;
+
+    &::before {
+      border-radius: 50%;
     }
-
-    &.round {
-        border-radius: $switch_height;
-
-        &:before {
-            border-radius: 50%;
-        }
-    }
+  }
 }
 </style>
