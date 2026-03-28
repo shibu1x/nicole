@@ -15,10 +15,10 @@ const emit = defineEmits<{
   <ul class="video-list">
     <li v-for="video in ranking" :key="video.OwnerId" class="video-item">
       <div class="controls">
-        <Slider :is_checked="video.IsMuted" @change="emit('toggleBlock', video.OwnerId)" />
+        <Slider :is_checked="video.IsMutedByOwner" @change="emit('toggleBlock', video.OwnerId)" />
       </div>
       <a
-        v-show="!video.IsMuted && !video.IsPaymentRequired"
+        v-show="!video.IsMuted"
         :href="video.WatchURL"
         target="_blank"
         class="video-link"

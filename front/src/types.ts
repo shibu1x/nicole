@@ -5,6 +5,8 @@ export interface Video {
     OwnerId: string
     IsPaymentRequired: boolean
     IsMuted: boolean
+    IsMutedByOwner: boolean
+    IsMutedByTitle: boolean
 }
 
 export type Rankings = Video[][]

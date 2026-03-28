@@ -9,6 +9,8 @@ const rankings = ref<Rankings>([])
 const isLoaded = ref(false)
 const blockedOwnerIds = ref<Set<string>>(new Set())
 const blockedOwnerIdsText = ref('')
+const blockedTitles = ref<string[]>([])
+const blockedTitlesText = ref('')
 const showBlockedControl = ref(false)
 useTitle('NicoRanking')
 
@@ -16,10 +18,16 @@ const filteredRankings = computed(() => {
   if (!isLoaded.value) return []
 
   return rankings.value.map(ranking =>
-    ranking.map(video => ({
-      ...video,
-      IsMuted: blockedOwnerIds.value.has(video.OwnerId)
-    }))
+    ranking.map(video => {
+      const IsMutedByOwner = blockedOwnerIds.value.has(video.OwnerId)
+      const IsMutedByTitle = blockedTitles.value.some(keyword => video.Title.includes(keyword))
+      return {
+        ...video,
+        IsMutedByOwner,
+        IsMutedByTitle,
+        IsMuted: IsMutedByOwner || IsMutedByTitle || video.IsPaymentRequired
+      }
+    })
   )
 })
 
@@ -34,6 +42,16 @@ const saveBlockedOwnerIds = () => {
     'block_owner_ids',
     JSON.stringify(Array.from(blockedOwnerIds.value))
   )
+}
+
+const loadBlockedTitles = () => {
+  const saved = localStorage.getItem('block_titles')
+  blockedTitles.value = saved ? JSON.parse(saved) : []
+  blockedTitlesText.value = blockedTitles.value.join('\n')
+}
+
+const saveBlockedTitles = () => {
+  localStorage.setItem('block_titles', JSON.stringify(blockedTitles.value))
 }
 
 const toggleBlockOwner = (ownerId: string) => {
@@ -52,11 +70,20 @@ const saveFromTextarea = () => {
   saveBlockedOwnerIds()
 }
 
+const saveFromTitlesTextarea = () => {
+  blockedTitles.value = blockedTitlesText.value
+    .split('\n')
+    .map(t => t.trim())
+    .filter(t => t !== '')
+  saveBlockedTitles()
+}
+
 onMounted(async () => {
   try {
     const response = await axios.get('https://shibu1x-public.s3.ap-northeast-1.amazonaws.com/test.json')
     rankings.value = response.data
     loadBlockedOwnerIds()
+    loadBlockedTitles()
     isLoaded.value = true
   } catch (error) {
     console.error('Failed to load rankings:', error)
@@ -71,12 +98,20 @@ onMounted(async () => {
         {{ showBlockedControl ? 'Hide' : 'Edit BlockList' }}
       </button>
       <div v-show="showBlockedControl" class="blocklist-editor">
+        <label>Owner ID</label>
         <textarea
           v-model="blockedOwnerIdsText"
           placeholder="Enter one Owner ID per line to block"
           rows="10"
         />
         <button @click="saveFromTextarea">Save</button>
+        <label>Title</label>
+        <textarea
+          v-model="blockedTitlesText"
+          placeholder="Enter one keyword per line to block by title"
+          rows="10"
+        />
+        <button @click="saveFromTitlesTextarea">Save</button>
       </div>
     </header>
     <main>
