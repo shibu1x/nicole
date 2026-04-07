@@ -20,7 +20,8 @@ const filteredRankings = computed(() => {
   return rankings.value.map(ranking =>
     ranking.map(video => {
       const IsMutedByOwner = blockedOwnerIds.value.has(video.OwnerId)
-      const IsMutedByTitle = blockedTitles.value.some(keyword => video.Title.includes(keyword))
+      const titleLower = video.Title.toLowerCase()
+      const IsMutedByTitle = blockedTitles.value.some(keyword => titleLower.includes(keyword.toLowerCase()))
       return {
         ...video,
         IsMutedByOwner,
