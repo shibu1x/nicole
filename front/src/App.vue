@@ -82,7 +82,7 @@ const saveFromTitlesTextarea = () => {
 onMounted(async () => {
   try {
     const response = await axios.get('https://shibu1x-public.s3.ap-northeast-1.amazonaws.com/test.json')
-    rankings.value = response.data
+    rankings.value = [0, 2, 3].map(i => response.data[i])
     loadBlockedOwnerIds()
     loadBlockedTitles()
     isLoaded.value = true
@@ -120,6 +120,7 @@ onMounted(async () => {
         v-for="(ranking, index) in filteredRankings"
         :key="index"
         :ranking="ranking"
+        :columns="filteredRankings.length"
         @toggle-block="toggleBlockOwner"
       />
     </main>
