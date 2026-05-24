@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'front/**'
+      - "front/**"
   workflow_dispatch:
 
 # GitHub Pagesへのデプロイに必要な権限を設定
@@ -22,20 +22,20 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         working-directory: ./front
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '23'
-          cache: 'npm'
-          cache-dependency-path: './front/package-lock.json'
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: "./front/package-lock.json"
 
       - name: Install dependencies
         run: npm clean-install

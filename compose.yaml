@@ -7,3 +7,23 @@ services:
     volumes:
       - "./terraform:/app"
       - "~/.aws:/root/.aws"
+
+  node:
+    # docker compose run --rm --entrypoint ''  node /bin/ash
+    # docker compose up -d node
+    image: node:lts-alpine
+    tty: true
+    working_dir: /app
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    ports:
+      - "5173:5173"
+    volumes:
+      - "./front:/app"
+
+  golang:
+    # docker compose run --rm golang go run main.go
+    image: golang:1.26-alpine
+    tty: true
+    working_dir: /app
+    volumes:
+      - "./back:/app"
