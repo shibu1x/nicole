@@ -11,7 +11,7 @@ services:
   node:
     # docker compose run --rm --entrypoint ''  node /bin/ash
     # docker compose up -d node
-    image: node:lts-alpine
+    image: node:24-alpine
     tty: true
     working_dir: /app
     command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
